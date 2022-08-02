@@ -1,8 +1,6 @@
 #include <avr/io.h>
-#include <util/delay.h>
 #include "usb_serial.h"
 
-#define F_CPU 16000000UL  // 1 MHz
 #define LED_CONFIG (DDRD |= (1<<6))
 #define LED_ON (PORTD |= (1<<6))
 #define LED_OFF (PORTD &= ~(1<<6))
