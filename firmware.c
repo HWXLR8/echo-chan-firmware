@@ -38,7 +38,6 @@ int main(void) {
   PORTB = 0xFF;
   PORTC = 0xFF;
 
-  char handshake = '0';
   uint8_t PINA_NEW = 0x00;
   uint8_t PINB_NEW = 0x00;
   uint8_t PINC_NEW = 0x00;
@@ -54,15 +53,24 @@ int main(void) {
   uint8_t SPIN1_OLD = 0x00;
   uint8_t SPIN2_OLD = 0x00;
 
+  int HANDSHAKED = 0;
+  int INPUT_CHANGED = 0;
+
   while (1) {
     LED_ON;
 
     // initiate a handshake on Data Terminal Ready (DTR) signal
-    if ((usb_serial_get_control() & USB_SERIAL_DTR)) {
+    if ((!HANDSHAKED && (usb_serial_get_control() & USB_SERIAL_DTR))) {
       if (usb_serial_getchar() == '6') {
         usb_serial_putchar('9');
         usb_serial_flush_output();
+        HANDSHAKED = 1;
+        INPUT_CHANGED = 1; // or rather, it's new to the Data Terminal
       }
+    }
+    // invalidate handshake if DTR signal no longer present
+    else if (!(usb_serial_get_control() & USB_SERIAL_DTR)) {
+        HANDSHAKED = 0;
     }
 
     // take a snapshot of the pins
@@ -90,6 +98,10 @@ int main(void) {
 
     // change detected
     if (PINA_NEW != PINA_OLD || PINB_NEW != PINB_OLD || PINC_NEW != PINC_OLD) {
+      INPUT_CHANGED = 1;
+    }
+
+    if (INPUT_CHANGED && HANDSHAKED) {
 
       // update spinner states
       if (PINB_NEW != PINB_OLD) {
@@ -133,6 +145,7 @@ int main(void) {
       PINC_OLD = PINC_NEW;
       SPIN1_OLD = SPIN1_NEW;
       SPIN2_OLD = SPIN2_NEW;
+      INPUT_CHANGED = 0;
     }
   }
 }
